@@ -17,14 +17,28 @@ public class ventana extends javax.swing.JFrame {
     private int centesimaSegundo = 0, segundo = 0, minuto = 0, hora = 0;
     
     /**
-     * Este Actionlistener hace un conteo de los segundos, al llegar a 60s aumenta a 1 min 
-     * y reinicia los segundos, lo mismo para minutos, al llegar a 60 aumenta a 1 hora y reinicia minutos
-    */
+     *La funcion iniciarCrono( ) llama a la funcion actualizarTiempo( ) y luego actualizarLabel( )
+     */
+    private void iniciarCrono() {
+        actualizarTiempo();
+        actualizarLabel();
+    }
     
-    private ActionListener acciones = new ActionListener() {
-        @Override
-        public void actionPerformed(ActionEvent e) {
-            centesimaSegundo++;
+    /**
+     *actualizarLabel( ) es una funcion que concatena en un string el contenido de las variables hora:minuto:segundo:milisegundo
+     * y posteriormente le asigna este string al texto de la etiqueta tiempo
+     */
+    private void actualizarLabel(){
+        String texto = hora+"h:"+minuto+"m:"+segundo+"s:"+centesimaSegundo;
+        etiquetaTiempo.setText(texto);
+    }
+        
+    /**
+     * Esta funcion se encarga de llevar el conteo desde centesimas de segundo, segundos, minutos, horas, cuando estas
+     * llegen a su maximo logic las reinicia y agrega un valor de uno a la unidad de tiempo siguiente
+    */
+    private void actualizarTiempo(){
+        centesimaSegundo++;
             if(centesimaSegundo == 100){
                 centesimaSegundo = 0;
                 segundo++;
@@ -37,28 +51,20 @@ public class ventana extends javax.swing.JFrame {
                 hora++;
                 minuto = 0;
             }
-            
-            actualizarTiempo();
-        }
-    };
-    
-    /**
-     * La funcion actualizarTiempo( ) usa un string que concatena las variables
-     * hora, minuto, segundo, centesimas de segundo y si dichas variables solo contienen un digito
-     * agrega a su izq un numero 0 para mantener siempre el mismo ancho de la etiqueta
-    */
-    private void actualizarTiempo(){
-        String texto = (hora<=9?"0":""+hora+(minuto<=9?"0":"")+minuto+(segundo<=9?"0":"")+segundo+(centesimaSegundo<=9?"0":"")+centesimaSegundo);
-        etiquetaTiempo.setText(texto);
     }
     
     /**
-     * Creates new form ventana
+     * Metodo constructor del frame ventana
      */
     public ventana() {
         initComponents();
+        
         this.setLocationRelativeTo(null);
-        tiempo = new Timer(10,acciones);
+        
+        tiempo = new Timer(10, (ActionEvent e) -> {
+            iniciarCrono();
+        });
+        
     }
 
     /**
@@ -92,12 +98,17 @@ public class ventana extends javax.swing.JFrame {
         etiquetaTiempo.setFont(new java.awt.Font("Arial Rounded MT Bold", 0, 48)); // NOI18N
         etiquetaTiempo.setForeground(new java.awt.Color(255, 255, 255));
         etiquetaTiempo.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
-        etiquetaTiempo.setText("00:00:00:00");
+        etiquetaTiempo.setText("00h:00m:00s:00");
         panel.add(etiquetaTiempo, new org.netbeans.lib.awtextra.AbsoluteConstraints(0, 50, 600, 110));
 
         detener.setFont(new java.awt.Font("Segoe UI", 0, 14)); // NOI18N
         detener.setText("Detener");
-        panel.add(detener, new org.netbeans.lib.awtextra.AbsoluteConstraints(440, 160, 90, 40));
+        detener.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                detenerActionPerformed(evt);
+            }
+        });
+        panel.add(detener, new org.netbeans.lib.awtextra.AbsoluteConstraints(440, 160, 100, 40));
 
         pausar.setFont(new java.awt.Font("Segoe UI", 0, 14)); // NOI18N
         pausar.setText("Pausar");
@@ -106,7 +117,7 @@ public class ventana extends javax.swing.JFrame {
                 pausarActionPerformed(evt);
             }
         });
-        panel.add(pausar, new org.netbeans.lib.awtextra.AbsoluteConstraints(250, 160, 80, 40));
+        panel.add(pausar, new org.netbeans.lib.awtextra.AbsoluteConstraints(250, 160, 100, 40));
 
         iniciar.setFont(new java.awt.Font("Segoe UI", 0, 14)); // NOI18N
         iniciar.setText("Iniciar");
@@ -115,7 +126,7 @@ public class ventana extends javax.swing.JFrame {
                 iniciarActionPerformed(evt);
             }
         });
-        panel.add(iniciar, new org.netbeans.lib.awtextra.AbsoluteConstraints(60, 163, 90, 40));
+        panel.add(iniciar, new org.netbeans.lib.awtextra.AbsoluteConstraints(60, 163, 110, 40));
 
         etiquetaFondo.setIcon(new javax.swing.ImageIcon(getClass().getResource("/img/background.jpg"))); // NOI18N
         etiquetaFondo.setText("Cronometro");
@@ -135,15 +146,51 @@ public class ventana extends javax.swing.JFrame {
         pack();
     }// </editor-fold>//GEN-END:initComponents
 
+    /**
+     *Cuando se clickea iniciar, el tiempo comienza a contar, y el boton se deshabilita y se renombra a "Reanudar",
+     * los demas botones se habilitan
+     */
     private void iniciarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_iniciarActionPerformed
-        iniciar.addActionListener(acciones);
+        tiempo.start();
         
+        iniciar.setEnabled(false);
+        iniciar.setText("Reanudar");
+        pausar.setEnabled(true);
+        detener.setEnabled(true);
     }//GEN-LAST:event_iniciarActionPerformed
 
+    /**
+     * cuando se clickea pausar, el tiempo se detiene, y se habilita el boton iniciar que ahora se llama "Reanudar" y pausar
+     */
     private void pausarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_pausarActionPerformed
-        pausar.addActionListener(acciones);
-        
+        tiempo.stop();
+        iniciar.setEnabled(true);
+        pausar.setEnabled(false);
     }//GEN-LAST:event_pausarActionPerformed
+
+    /**
+     *Cuando se clickea detener, si el tiempo esta corriendo se frena, el boton pausar se desactiva, el boton iniciar("reanudar") se activa,
+     * el boton pausar se desactiva, luego el boton iniciar vuelve a llamarse "iniciar", pausar se vuelve a activar, detener se 
+     * desactiva, y las variables se resetean a cero todas, se llama a la funcion actualizarTiempo( ) y el tiempo se reinicia
+     */
+    private void detenerActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_detenerActionPerformed
+        if(tiempo.isRunning()){
+            tiempo.stop();
+            iniciar.setEnabled(true);
+            pausar.setEnabled(false);
+        }
+        iniciar.setText("Iniciar");
+        pausar.setEnabled(true);
+        detener.setEnabled(false);
+        
+        hora = 0;
+        minuto = 0;
+        segundo = 0;
+        centesimaSegundo = 0;
+        
+        actualizarLabel();
+        
+    }//GEN-LAST:event_detenerActionPerformed
 
     /**
      * @param args the command line arguments
